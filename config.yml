@@ -1,5 +1,6 @@
 captureDirectory: ./captures
 completeDirectory: ./complete
+streamDirectory: ./converted
 modelScanInterval: 30
 createModelDirectory: true
 dateFormat: YYYYMMDD-HHmmss

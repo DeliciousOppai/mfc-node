@@ -8,6 +8,8 @@ var colors = require('colors');
 var mkdirp = require('mkdirp');
 var yaml = require('js-yaml');
 var _ = require('underscore');
+var XRegExp = require('xregexp');
+var childProcess = require('child_process');
 var path = require('path');
 var childProcess = require('child_process');
 var HttpDispatcher = require('httpdispatcher');
@@ -352,9 +354,75 @@ function checkCaptureProcess(capturingModel) {
     });
 }
 
+<<<<<<< HEAD
 function addInQueue(req, res) {
   var model;
   var mode = 0;
+=======
+function getStreamableVideos() {
+  return fs
+    .readdirAsync(config.streamDirectory)
+    .then(function(files) {
+      printDebugMsg(files);
+      var streamable = [];
+      files = _.filter(files, function(file) {
+        return S(file).endsWith('.mp4');
+      });
+      var filepattern = XRegExp("^\
+        (?<model>[a-z0-9]+) -\
+        (?<year>[0-9]{4}) - \
+        (?<month>[0-9]{2}) - \
+        (?<day>[0-9]{2}) T \
+        (?<hour>[0-9]{2}) \
+        (?<minute>[0-9]{2}) \
+        (?<second>[0-9]{2}) \
+        .mp4", 'xi');
+      _.each(files, function(file) {
+        printDebugMsg(file);
+        var match = XRegExp.exec(file, filepattern);
+        if (!match) {
+            printDebugMsg("- Did not match");
+            return;
+        }
+        printDebugMsg(match);
+        streamable.push({
+                "model": match.model,
+                "timestamp": new Date(match.year, match.month, match.day, match.hour, match.minute, match.second).toISOString(),
+                "filename": file
+        });
+      });
+      return streamable;
+    });
+}
+
+function mainLoop() {
+  printDebugMsg('Start searching for new models');
+
+  Promise
+    .try(function() {
+      return getFileno();
+    })
+    .then(function(fileno) {
+      return getOnlineModels(fileno);
+    })
+    .then(function() {
+      return selectMyModels();
+    })
+    .then(function(myModels) {
+      return Promise.all(myModels.map(createCaptureProcess));
+    })
+    .then(function() {
+      return Promise.all(modelsCurrentlyCapturing.map(checkCaptureProcess));
+    })
+    .then(function() {
+      models = onlineModels;
+    })
+    .catch(function(err) {
+      printErrorMsg(err);
+    })
+    .finally(function() {
+      dumpModelsCurrentlyCapturing();
+>>>>>>> Add endpoint to retrieve streamable videos sorted by model
 
   if (req.url.startsWith('/models/include')) {
     mode = 1;
@@ -471,7 +539,19 @@ dispatcher.onGet('/models/exclude', addInQueue);
 // in fact the model will be marked as "deleted" in config only with the next iteration of mainLoop
 dispatcher.onGet('/models/delete', addInQueue);
 
+<<<<<<< HEAD
 dispatcher.onError((req, res) => {
+=======
+dispatcher.onGet("/videos", function(req, res) {
+  res.writeHead(200, {'Content-Type': 'application/json'});
+  getStreamableVideos()
+  .then(function(videos) {
+    res.end(JSON.stringify(videos));
+  });
+});
+
+dispatcher.onError(function(req, res) {
+>>>>>>> Add endpoint to retrieve streamable videos sorted by model
   res.writeHead(404);
 });
 
