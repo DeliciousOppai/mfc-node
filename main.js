@@ -550,6 +550,55 @@ dispatcher.onGet("/videos", function(req, res) {
   });
 });
 
+dispatcher.onGet(/^\/v\/.*\.mp4$/, function(req, res) {
+    res.setHeader("Content-Type", "video/mp4");
+    var filename = req.url.split("/").pop();
+    filename = path.resolve(config.streamDirectory, filename);
+    printMsg("Stream request for " + filename)
+    fs.stat(filename, function(err, stats) {
+      if (err) {
+        printErrorMsg("Error while streaming file: " + err.Error);
+        // printErrorMsg(err);
+        res.writeHead(404);
+        return res.end(err.toString());
+      }
+      var range = req.headers.range;
+      var start = 0;
+      var total = stats.size;
+      var end = total - 1;
+
+      if (range) {
+        //   res.writeHead(416);
+        //   return res.end();
+        var positions = range.replace(/bytes=/, "").split("-");
+        start = parseInt(positions[0], 10);
+        end = positions[1] ? parseInt(positions[1], 10) : total - 1;
+      }
+
+      if (start > end) {
+          printErrorMsg("Requested stream was empty");
+          res.writeHead(500);
+          return res.end();
+      }
+
+      var chunksize = (end - start) + 1;
+
+      res.writeHead(206, {
+        "Content-Range": "bytes " + start + "-" + end + "/" + total,
+        "Accept-Ranges": "bytes",
+        "Content-Length": chunksize
+      });
+
+      var stream = fs.createReadStream(filename, { start: start, end: end })
+        .on("open", function() {
+          printMsg("Streaming " + filename + " range " + start + " -> " + end)
+          stream.pipe(res);
+        }).on("error", function(err) {
+          res.end(err.toString());
+        });
+    });
+});
+
 dispatcher.onError(function(req, res) {
 >>>>>>> Add endpoint to retrieve streamable videos sorted by model
   res.writeHead(404);
