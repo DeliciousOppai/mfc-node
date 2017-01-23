@@ -1,0 +1,208 @@
+<!doctype html>
+
+<html lang="en" ng-app="app">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <title>MyFreeCams Recorder</title>
+  <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Roboto:400,300' type='text/css'>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.indigo-red.min.css" />
+  <style>
+    a[disabled] {
+      pointer-events: none;
+    }
+
+    [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+      display: none !important;
+    }
+
+    body {
+      background-color: #efefef;
+    }
+
+    main.mdl-layout__content {
+      overflow-x: auto;
+    }
+
+    .padding {
+      display: table-cell;
+      width: 50%;
+    }
+
+    .table{
+      padding: 40px 0px 150px;
+      display: table-cell;
+    }
+
+    .table table {
+      margin: auto;
+    }
+
+    a[ng-click],
+    th[ng-click] {
+      cursor: pointer;
+    }
+
+    .material-icons.mdi-24 {
+      font-size: 24px;
+    }
+
+    .spinner {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      background: #efefef;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .refresh {
+      position: relative;
+      top: 30px;
+    }
+
+  .ko-fi {
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .ko-fi {
+      margin-right: 15px;
+      display: block;
+    }
+  }
+  </style>
+</head>
+<body ng-controller="AppController as vm">
+  <div class="spinner" ng-hide="vm.ready">
+    <div class="mdl-spinner mdl-js-spinner is-active"></div>
+  </div>
+  <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+    <header class="mdl-layout__header">
+      <div class="mdl-layout__header-row">
+        <span class="mdl-layout-title">MyFreeCams Recorder</span>
+        <div class="mdl-layout-spacer"></div>
+        <a class="ko-fi" href='https://ko-fi.com/A320FTJ' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi4.png?v=f' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+        <nav class="mdl-navigation">
+          <button class="refresh mdl-button mdl-js-button mdl-button--fab mdl-button--colored mdl-shadow--4dp" ng-click="vm.refresh()" title="reload">
+            <i class="material-icons">refresh</i>
+          </button>
+        </nav>
+      </div>
+    </header>
+    <main class="mdl-layout__content">
+<!--       <div class="mdl-grid">
+        <div class="mdl-cell mdl-cell--12-col" style="overflow: auto"> -->
+
+          <div class="padding"></div>
+          <div class="table">
+            <div id="player" ng-hide="vm.hidePlayer">
+              <h2 ng-bind="vm.videoName"></h2>
+              <video controls width="800px" ng-src="{{vm.video}}"></video>
+            </div>
+            <table class="mdl-data-table mdl-js-data-table mdl-shadow--2dp">
+              <thead>
+                <tr>
+                  <th class="mdl-data-table__cell--non-numeric" ng-click="vm.sort('model')" ng-class="vm.sortType == 'model' ? ('mdl-data-table__header--sorted-' + (vm.sortReverse ? 'ascending' : 'descending') ) : ''">Name</th>
+                  <th class="mdl-data-table__cell--non-numeric" ng-click="vm.sort('timestamp')" ng-class="vm.sortType == 'timestamp' ? ('mdl-data-table__header--sorted-' + (vm.sortReverse ? 'ascending' : 'descending') ) : ''">Date recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat="model in vm.models | orderBy:vm.sortType:vm.sortReverse" ng-class="vm.rowColor(model.vs)">
+                  <td class="mdl-data-table__cell--non-numeric">
+                    <a class="mdl-color-text--blue-800" ng-click="vm.stream(model.filename)" ng-bind="model.model"></a>
+                  </td>
+                  <td ng-bind="model.timestamp"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="padding"></div>
+<!--         </div>
+      </div> -->
+    </main>
+  </div>
+
+  <script defer src="https://code.getmdl.io/1.2.1/material.min.js"></script>
+  <script src="https://code.angularjs.org/1.5.8/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+
+  <script>
+    var app = angular.module('app', []);
+
+    app.controller('AppController', ['$timeout', '$http', function($timeout, $http) {
+      var vm = this;
+
+      vm.models = [];
+
+      vm.sortType = 'timestamp';
+      vm.sortReverse = true;
+      vm.hidePlayer = true;
+
+      vm.sort = function(sortType) {
+        if (vm.sortType == sortType) {
+          vm.sortReverse = !vm.sortReverse;
+        } else {
+          vm.sortType = sortType;
+        }
+      };
+
+      vm.includeUid = function(model) {
+        $http.get('/models/include', {params: {uid: model.uid}}).then(function(response) {
+          model.nextMode = 1;
+          model.vs = -3;
+          model.state = getState(model.vs);
+        });
+      };
+
+      vm.rowColor = function(vs) {
+        if (vs == -4) {
+          return 'mdl-color-text--green-400 mdl-color--green-50';
+        } else if (vs == -3) {
+          return 'mdl-color-text--blue-300 mdl-color--blue-50';
+        } else if (vs == -1) {
+          return 'mdl-color-text--red-300 mdl-color--red-50';
+        } else if (vs == -2 || vs > 0) {
+          return 'mdl-color-text--grey-400 mdl-color--grey-100';
+        }
+      };
+
+      vm.refresh = function() {
+        vm.ready = false;
+
+        $http
+          .get('/videos')
+          .then(function(response) {
+
+            vm.models = _
+              .filter(response.data, function(m) {
+                return true;
+              })
+
+            $timeout(function() {
+              componentHandler.upgradeAllRegistered();
+              vm.ready = true;
+            });
+          });
+      };
+
+      vm.stream = function(filename) {
+        var url = "/v/" + filename;
+        console.log("foo");
+        vm.video = url;
+        vm.videoName = filename;
+        vm.hidePlayer = false;
+        console.log("bar");
+        // $("#player video").play();
+        // console.log(url);
+        console.log("baz");
+      };
+
+      vm.refresh();
+    }]);
+  </script>
+</body>
+</html>
