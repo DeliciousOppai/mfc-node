@@ -363,7 +363,6 @@ function getStreamableVideos() {
   return fs
     .readdirAsync(config.streamDirectory)
     .then(function(files) {
-      printDebugMsg(files);
       var streamable = [];
       files = _.filter(files, function(file) {
         return S(file).endsWith('.mp4');
@@ -378,13 +377,10 @@ function getStreamableVideos() {
         (?<second>[0-9]{2}) \
         .mp4", 'xi');
       _.each(files, function(file) {
-        printDebugMsg(file);
         var match = XRegExp.exec(file, filepattern);
         if (!match) {
-            printDebugMsg("- Did not match");
             return;
         }
-        printDebugMsg(match);
         streamable.push({
                 "model": match.model,
                 "timestamp": new Date(match.year, match.month, match.day, match.hour, match.minute, match.second).toISOString(),
