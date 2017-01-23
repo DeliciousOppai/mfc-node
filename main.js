@@ -546,6 +546,18 @@ dispatcher.onGet("/videos", function(req, res) {
   });
 });
 
+dispatcher.onGet('/videos.html', function(req, res) {
+  fs.readFile('./videos.html', function(err, data) {
+    if (err) {
+      res.writeHead(404, {'Content-Type': 'text/html'});
+      res.end('Not Found');
+    } else {
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      res.end(data, 'utf-8');
+    }
+  });
+});
+
 dispatcher.onGet(/^\/v\/.*\.mp4$/, function(req, res) {
     res.setHeader("Content-Type", "video/mp4");
     var filename = req.url.split("/").pop();
