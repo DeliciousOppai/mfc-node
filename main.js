@@ -354,11 +354,6 @@ function checkCaptureProcess(capturingModel) {
     });
 }
 
-<<<<<<< HEAD
-function addInQueue(req, res) {
-  var model;
-  var mode = 0;
-=======
 function getStreamableVideos() {
   return fs
     .readdirAsync(config.streamDirectory)
@@ -391,34 +386,9 @@ function getStreamableVideos() {
     });
 }
 
-function mainLoop() {
-  printDebugMsg('Start searching for new models');
-
-  Promise
-    .try(function() {
-      return getFileno();
-    })
-    .then(function(fileno) {
-      return getOnlineModels(fileno);
-    })
-    .then(function() {
-      return selectMyModels();
-    })
-    .then(function(myModels) {
-      return Promise.all(myModels.map(createCaptureProcess));
-    })
-    .then(function() {
-      return Promise.all(modelsCurrentlyCapturing.map(checkCaptureProcess));
-    })
-    .then(function() {
-      models = onlineModels;
-    })
-    .catch(function(err) {
-      printErrorMsg(err);
-    })
-    .finally(function() {
-      dumpModelsCurrentlyCapturing();
->>>>>>> Add endpoint to retrieve streamable videos sorted by model
+function addInQueue(req, res) {
+  var model;
+  var mode = 0;
 
   if (req.url.startsWith('/models/include')) {
     mode = 1;
@@ -535,9 +505,6 @@ dispatcher.onGet('/models/exclude', addInQueue);
 // in fact the model will be marked as "deleted" in config only with the next iteration of mainLoop
 dispatcher.onGet('/models/delete', addInQueue);
 
-<<<<<<< HEAD
-dispatcher.onError((req, res) => {
-=======
 dispatcher.onGet("/videos", function(req, res) {
   res.writeHead(200, {'Content-Type': 'application/json'});
   getStreamableVideos()
@@ -608,7 +575,6 @@ dispatcher.onGet(/^\/v\/.*\.mp4$/, function(req, res) {
 });
 
 dispatcher.onError(function(req, res) {
->>>>>>> Add endpoint to retrieve streamable videos sorted by model
   res.writeHead(404);
 });
 
